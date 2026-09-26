@@ -8,12 +8,10 @@
 #define INPUT_SIZE 1024
 #define MAX_ARGS 64
 
-static void execute_command(char *input)
+static int parse_command(char *input, char *args[])
 {
-    char *args[MAX_ARGS];
     int argc = 0;
 
-    /* Split input into command + arguments */
     char *token = strtok(input, " \t");
 
     while (token != NULL && argc < MAX_ARGS - 1)
@@ -24,7 +22,15 @@ static void execute_command(char *input)
 
     args[argc] = NULL;
 
-    /* Empty command */
+    return argc;
+}
+
+static void execute_command(char *input)
+{
+    char *args[MAX_ARGS];
+
+    int argc = parse_command(input, args);
+
     if (argc == 0)
         return;
 
@@ -45,39 +51,35 @@ static void execute_command(char *input)
 
     if (pid == 0)
     {
-        /* Child process */
-        printf("[Child] PID=%d, PPID=%d\n", getpid(), getppid());
+        printf("[Child] PID=%d PPID=%d\n",
+               getpid(), getppid());
 
         execvp(args[0], args);
 
-        /* Only reached if execvp fails */
         perror("execvp");
         exit(EXIT_FAILURE);
     }
-    else
+
+    int status;
+
+    printf("[Parent] PID=%d Child PID=%d\n",
+           getpid(), pid);
+
+    if (waitpid(pid, &status, 0) == -1)
     {
-        /* Parent process */
-        int status;
+        perror("waitpid");
+        return;
+    }
 
-        printf("[Parent] PID=%d, Child PID=%d\n",
-               getpid(), pid);
-
-        if (waitpid(pid, &status, 0) == -1)
-        {
-            perror("waitpid");
-            return;
-        }
-
-        if (WIFEXITED(status))
-        {
-            printf("[Parent] Child exited with status %d\n",
-                   WEXITSTATUS(status));
-        }
-        else if (WIFSIGNALED(status))
-        {
-            printf("[Parent] Child terminated by signal %d\n",
-                   WTERMSIG(status));
-        }
+    if (WIFEXITED(status))
+    {
+        printf("[Parent] Child exited with status %d\n",
+               WEXITSTATUS(status));
+    }
+    else if (WIFSIGNALED(status))
+    {
+        printf("[Parent] Child terminated by signal %d\n",
+               WTERMSIG(status));
     }
 }
 
