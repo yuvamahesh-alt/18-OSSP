@@ -1,0 +1,21 @@
+# Compiled files
+*.o
+*.out
+
+# Executables
+shellforge
+a.out
+*.elf
+
+# Debug files
+core
+core.*
+
+# Editor files
+.vscode/
+*.swp
+*~
+
+# Temporary files
+*.tmp
+*.log
